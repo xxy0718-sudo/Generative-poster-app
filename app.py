@@ -17,7 +17,7 @@ def random_pastel_color(palette_type='minimal'):
     }
     base_colors = palettes.get(palette_type, [(200,200,200)])
     r, g, b = random.choice(base_colors)
-    return (r/255, g/255, b/255, 0.6)
+    return (r/255, g/255, b/255, 0.6)  # semi-transparent
 
 # ---------------------------
 # Draw a circular blob with small irregular waves
@@ -26,7 +26,6 @@ def draw_irregular_wavy_circle(ax, x, y, radius=1, num_points=100, max_offset=0.
     angles = np.linspace(0, 2*np.pi, num_points, endpoint=False)
     xs, ys = [], []
     for angle in angles:
-        # 每个点随机偏移一点半径，产生不规则细小波纹
         offset = random.uniform(-max_offset, max_offset)
         r = radius + offset
         xs.append(x + r * np.cos(angle))
@@ -37,7 +36,12 @@ def draw_irregular_wavy_circle(ax, x, y, radius=1, num_points=100, max_offset=0.
 # ---------------------------
 # Poster generator
 # ---------------------------
-def generate_irregular_wavy_poster(width=8, height=10, n_blobs=25, style='minimal', seed=None, save_path=None):
+def generate_layered_wavy_poster(width=8, height=10, n_blobs=10, style='minimal', seed=None, save_path=None):
+    """
+    Generates a poster with layered circular blobs with irregular small waves.
+    n_blobs: number of blobs (moderate, not too many)
+    Sizes vary randomly and blobs can overlap.
+    """
     if seed is not None:
         random.seed(seed)
         np.random.seed(seed)
@@ -49,9 +53,10 @@ def generate_irregular_wavy_poster(width=8, height=10, n_blobs=25, style='minima
 
     for _ in range(n_blobs):
         x, y = random.uniform(0, width), random.uniform(0, height)
-        radius = random.uniform(0.5, 1.5)
+        radius = random.uniform(0.5, 2)  # random size
         color = random_pastel_color(style)
-        draw_irregular_wavy_circle(ax, x, y, radius, num_points=100, max_offset=0.08, color=color)
+        max_offset = random.uniform(0.03, 0.12)  # random small wave
+        draw_irregular_wavy_circle(ax, x, y, radius, num_points=120, max_offset=max_offset, color=color)
 
     # Add top-left text
     ax.text(0.2, height-0.5, "Generative Poster", fontsize=16, fontweight='bold', ha='left', va='top')
@@ -66,4 +71,4 @@ def generate_irregular_wavy_poster(width=8, height=10, n_blobs=25, style='minima
 # ---------------------------
 # Example usage
 # ---------------------------
-generate_irregular_wavy_poster(width=8, height=10, n_blobs=25, style='vivid', seed=42, save_path='irregular_wavy_poster.png')
+generate_layered_wavy_poster(width=8, height=10, n_blobs=10, style='vivid', seed=42, save_path='layered_wavy_poster.png')

@@ -66,4 +66,4 @@ def generate_irregular_wavy_poster(width=8, height=10, n_blobs=25, style='minima
 # ---------------------------
 # Example usage
 # ---------------------------
-generate_irregular_wavy_poster(width=8, height=10, n_blobs=25, style='vivid', seed=42, save_path='irregular_wavy_poster.png')  위 코드를 github를 통해서 streamlit cloud 상에서 실행(배포)하고 싶어
+generate_irregular_wavy_poster(width=8, height=10, n_blobs=25, style='vivid', seed=42, save_path='irregular_wavy_poster.png')

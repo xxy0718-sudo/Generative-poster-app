@@ -1,70 +1,69 @@
-import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
-import random, os
+import random
 
 # ---------------------------
-# Pastel color palette
+# Pastel color generator
 # ---------------------------
-def random_pastel_color(palette_type='pastel'):
+def random_pastel_color(palette_type='minimal'):
     palettes = {
-        'pastel': [(255, 179, 186), (255, 223, 186), (255, 255, 186),
-                   (186, 255, 201), (186, 225, 255), (204, 204, 255)],
-        'minimal': [(240, 240, 240), (220, 220, 220), (200, 200, 200)],
+        'minimal': [(255, 179, 186), (255, 223, 186), (255, 255, 186),
+                    (186, 255, 201), (186, 225, 255)],
+        'vivid': [(255, 153, 153), (255, 204, 153), (255, 255, 153),
+                  (153, 255, 204), (153, 204, 255)],
+        'noisetouch': [(230, 180, 180), (230, 210, 180), (230, 230, 180),
+                       (180, 230, 210), (180, 210, 230)]
     }
-    rgb = random.choice(palettes.get(palette_type, palettes['pastel']))
-    return np.array(rgb) / 255
+    base_colors = palettes.get(palette_type, [(200,200,200)])
+    r, g, b = random.choice(base_colors)
+    return (r/255, g/255, b/255, 0.6)
 
 # ---------------------------
-# Generate blob shape
+# Draw a circular blob with small irregular waves
 # ---------------------------
-def random_blob(center, radius, n_points=100, wobble=0.3):
-    angles = np.linspace(0, 2*np.pi, n_points)
-    r = radius * (1 + wobble * np.random.uniform(-1, 1, n_points))
-    x = center[0] + r * np.cos(angles)
-    y = center[1] + r * np.sin(angles)
-    return np.column_stack([x, y])
-
-# ---------------------------
-# Streamlit UI
-# ---------------------------
-st.title("🎨 Generative Poster (Streamlit)")
-
-layers = st.sidebar.slider("Layers", 3, 15, 8)
-wobble = st.sidebar.slider("Wobble", 0.0, 0.5, 0.18)
-palette_type = st.sidebar.selectbox("Palette", ["pastel", "minimal"])
-mono_hue = st.sidebar.slider("Mono Hue (0–1)", 0.0, 1.0, 0.6)
-save = st.sidebar.checkbox("Save poster", True)
-save_dir = st.sidebar.text_input("Save dir", "posters")
-width = st.sidebar.slider("Preview width (px)", 600, 2000, 1200)
-
-if st.button("🔄 Regenerate"):
-    st.experimental_rerun()
+def draw_irregular_wavy_circle(ax, x, y, radius=1, num_points=100, max_offset=0.08, color=(0.5,0.5,0.5,0.6)):
+    angles = np.linspace(0, 2*np.pi, num_points, endpoint=False)
+    xs, ys = [], []
+    for angle in angles:
+        # 每个点随机偏移一点半径，产生不规则细小波纹
+        offset = random.uniform(-max_offset, max_offset)
+        r = radius + offset
+        xs.append(x + r * np.cos(angle))
+        ys.append(y + r * np.sin(angle))
+    polygon = Polygon(np.column_stack([xs, ys]), closed=True, color=color)
+    ax.add_patch(polygon)
 
 # ---------------------------
-# Generate poster
+# Poster generator
 # ---------------------------
-fig, ax = plt.subplots(figsize=(width/100, width/100))
-ax.set_xlim(0, 10)
-ax.set_ylim(0, 10)
-ax.axis("off")
+def generate_irregular_wavy_poster(width=8, height=10, n_blobs=25, style='minimal', seed=None, save_path=None):
+    if seed is not None:
+        random.seed(seed)
+        np.random.seed(seed)
 
-for i in range(layers):
-    center = np.random.uniform(2, 8, 2)
-    radius = np.random.uniform(1.5, 3)
-    blob = random_blob(center, radius, wobble=wobble)
-    color = random_pastel_color(palette_type)
-    ax.add_patch(Polygon(blob, closed=True, facecolor=color, alpha=0.6, edgecolor='gray', linewidth=0.5))
+    fig, ax = plt.subplots(figsize=(width, height))
+    ax.set_xlim(0, width)
+    ax.set_ylim(0, height)
+    ax.axis('off')
 
-plt.text(3, 9.5, "Poster • pastel", fontsize=20, fontweight='bold')
+    for _ in range(n_blobs):
+        x, y = random.uniform(0, width), random.uniform(0, height)
+        radius = random.uniform(0.5, 1.5)
+        color = random_pastel_color(style)
+        draw_irregular_wavy_circle(ax, x, y, radius, num_points=100, max_offset=0.08, color=color)
 
-# Show in Streamlit
-st.pyplot(fig)
+    # Add top-left text
+    ax.text(0.2, height-0.5, "Generative Poster", fontsize=16, fontweight='bold', ha='left', va='top')
+    ax.text(0.2, height-1.0, "Week 2 Arts & Advanced Big Data", fontsize=12, ha='left', va='top')
 
-# Save file
-if save:
-    os.makedirs(save_dir, exist_ok=True)
-    fname = os.path.join(save_dir, f"poster_{random.randint(1000,9999)}.png")
-    plt.savefig(fname, dpi=300, bbox_inches='tight')
-    st.success(f"Saved: {fname}")
+    ax.set_aspect('equal')
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight', transparent=False)
+    plt.show()
+
+# ---------------------------
+# Example usage
+# ---------------------------
+generate_irregular_wavy_poster(width=8, height=10, n_blobs=25, style='vivid', seed=42, save_path='irregular_wavy_poster.png')  위 코드를 github를 통해서 streamlit cloud 상에서 실행(배포)하고 싶어

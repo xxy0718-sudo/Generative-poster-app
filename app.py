@@ -5,21 +5,21 @@ import numpy as np, math, random, io
 st.set_page_config(layout="wide", page_title="Unique Poster Generator")
 
 st.title("Unique Poster • vivid")
-st.markdown("通过参数调整生成独一无二的艺术海报")
+st.markdown("Generate a unique layered spiky poster with adjustable parameters below:")
 
-# ======= 参数面板 =======
+# ======= SIDEBAR CONTROLS =======
 with st.sidebar:
-    st.header("参数设置")
-    seed = st.number_input("Seed 随机种子", value=2025, step=1)
-    layers = st.slider("Layers 图层数量", 1, 40, 12)
-    wobble = st.slider("Wobble 尖刺波动", 0.0, 1.0, 0.25)
-    palette_style = st.selectbox("颜色风格", ["vivid", "muted", "cool", "warm", "pastel"])
-    outline_width = st.slider("描边粗细", 0, 8, 2)
-    alpha = st.slider("透明度 (0-255)", 10, 255, 150)
-    size = st.slider("画布大小 (px)", 600, 1600, 1000)
-    regenerate = st.button("生成 / 刷新")
+    st.header("Settings")
+    seed = st.number_input("Seed (randomness control)", value=2025, step=1)
+    layers = st.slider("Layers (number of shapes)", 1, 40, 12)
+    wobble = st.slider("Wobble (spike variation)", 0.0, 1.0, 0.25)
+    palette_style = st.selectbox("Color palette", ["vivid", "muted", "cool", "warm", "pastel"])
+    outline_width = st.slider("Outline width", 0, 8, 2)
+    alpha = st.slider("Transparency (0-255)", 10, 255, 150)
+    size = st.slider("Canvas size (px)", 600, 1600, 1000)
+    regenerate = st.button("Generate / Refresh")
 
-# ======= 颜色方案 =======
+# ======= COLOR PALETTES =======
 PALETTES = {
     "vivid": [(39,121,200),(77,183,255),(243,118,97),(186,84,170),(114,221,204),(91,155,173)],
     "muted": [(120,150,170),(140,125,135),(150,160,150),(110,130,120),(130,110,140)],
@@ -28,7 +28,7 @@ PALETTES = {
     "pastel": [(198,234,255),(255,220,235),(230,255,240),(250,240,255),(240,255,220)]
 }
 
-# ======= 主绘图函数 =======
+# ======= MAIN DRAWING FUNCTION =======
 def generate_spiky_image(seed=2025, layers=12, wobble=0.25, size=1000, palette_name="vivid", outline_w=2, alpha=150):
     random.seed(int(seed))
     np.random.seed(int(seed) % 4294967295)
@@ -37,7 +37,7 @@ def generate_spiky_image(seed=2025, layers=12, wobble=0.25, size=1000, palette_n
     draw = ImageDraw.Draw(canvas, "RGBA")
     cx, cy = size // 2, size // 2
 
-    # 控制形状大致排布方向（上下叠）
+    # Position shapes roughly along a diagonal
     centers = []
     angle = -math.pi / 3
     for i in range(layers):
@@ -46,14 +46,14 @@ def generate_spiky_image(seed=2025, layers=12, wobble=0.25, size=1000, palette_n
         dy = int(math.sin(angle + (i * 0.14)) * r * 1.05)
         centers.append((cx + dx, cy + dy))
 
-    for i, c in enumerate(centers[::-1]):  # 从下往上绘制
+    # Draw from back to front
+    for i, c in enumerate(centers[::-1]):
         col = palette[i % len(palette)]
-        # 微调颜色
         jitter = tuple(max(0, min(255, int(v + random.randint(-25, 25)))) for v in col)
         fill = (jitter[0], jitter[1], jitter[2], alpha)
         edge = (max(0, jitter[0] - 30), max(0, jitter[1] - 30), max(0, jitter[2] - 30), 255)
 
-        # 当前层的半径
+        # Layer radius and spikes
         min_r, max_r = 100, 400
         r = int(min_r + (i / len(centers)) * (max_r - min_r) + random.uniform(-wobble, wobble) * 80)
 
@@ -68,7 +68,7 @@ def generate_spiky_image(seed=2025, layers=12, wobble=0.25, size=1000, palette_n
             y = c[1] + rad * math.sin(theta)
             points.append((x, y))
 
-        # 填充
+        # Draw the filled polygon and outline
         draw.polygon(points, fill=fill)
         if outline_w > 0:
             for a in range(len(points)):
@@ -76,18 +76,19 @@ def generate_spiky_image(seed=2025, layers=12, wobble=0.25, size=1000, palette_n
 
     return canvas
 
-# ======= 生成图像并展示 =======
+# ======= GENERATE AND DISPLAY =======
 img = generate_spiky_image(seed=seed, layers=layers, wobble=wobble, size=size,
                            palette_name=palette_style, outline_w=outline_width, alpha=alpha)
 
-# 转成PNG缓冲
+# Convert to PNG buffer
 buf = io.BytesIO()
 img.save(buf, format="PNG")
 buf.seek(0)
 
-# 展示与下载
+# Show image and download button
 st.image(buf, use_column_width=True)
-st.download_button("下载海报 PNG", data=buf, file_name="unique_poster.png", mime="image/png")
+st.download_button("Download Poster (PNG)", data=buf, file_name="unique_poster.png", mime="image/png")
 
 st.markdown("---")
-st.markdown("此 Streamlit 应用生成类似实验艺术风格的彩色尖刺海报。可部署至 [Streamlit Cloud](https://streamlit.io/cloud) 或本地运行。")
+st.markdown("This Streamlit app creates layered abstract spiky posters. Adjust parameters and export your own designs. Ready to deploy on [Streamlit Cloud](https://streamlit.io/cloud) or run locally.")
+

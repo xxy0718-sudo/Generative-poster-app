@@ -1,76 +1,78 @@
 import streamlit as st
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon
+import numpy as np
 import random
 
 # ---------------------------
-# Pastel color generator
+# Generate random palette
 # ---------------------------
-def random_pastel_color(palette_type='minimal'):
-    palettes = {
-        'minimal': [(255, 179, 186), (255, 223, 186), (255, 255, 186),
-                    (186, 255, 201), (186, 225, 255)],
-        'vivid': [(255, 153, 153), (255, 204, 153), (255, 255, 153),
-                  (153, 255, 204), (153, 204, 255)],
-        'noisetouch': [(230, 180, 180), (230, 210, 180), (230, 230, 180),
-                       (180, 230, 210), (180, 210, 230)]
-    }
-    base_colors = palettes.get(palette_type, [(200, 200, 200)])
-    r, g, b = random.choice(base_colors)
-    return (r / 255, g / 255, b / 255, 0.6)
+def random_palette(n_colors, palette_type="pastel"):
+    colors = []
+    for _ in range(n_colors):
+        if palette_type == "pastel":
+            color = (random.uniform(0.6,1.0), random.uniform(0.6,1.0), random.uniform(0.6,1.0))
+        elif palette_type == "vivid":
+            color = (random.random(), random.random(), random.random())
+        elif palette_type == "muted":
+            color = (random.uniform(0.2,0.6), random.uniform(0.2,0.6), random.uniform(0.2,0.6))
+        else:
+            color = (random.random(), random.random(), random.random())
+        colors.append(color)
+    return colors
 
 # ---------------------------
-# Draw a circular blob with small irregular waves
+# Generate wobbly circular blob
 # ---------------------------
-def draw_irregular_wavy_circle(ax, x, y, radius=1, num_points=100, max_offset=0.08, color=(0.5, 0.5, 0.5, 0.6)):
-    angles = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
-    xs, ys = [], []
-    for angle in angles:
-        offset = random.uniform(-max_offset, max_offset)
-        r = radius + offset
-        xs.append(x + r * np.cos(angle))
-        ys.append(y + r * np.sin(angle))
-    polygon = Polygon(np.column_stack([xs, ys]), closed=True, color=color)
-    ax.add_patch(polygon)
+def blob(center, size, wobble_factor=0.2, n_points=100):
+    angles = np.linspace(0, 2*np.pi, n_points)
+    radius = size + np.random.normal(0, size * wobble_factor, n_points)
+    x = center[0] + radius * np.cos(angles)
+    y = center[1] + radius * np.sin(angles)
+    return x, y
 
 # ---------------------------
-# Poster generator
+# Generate poster (returns fig)
 # ---------------------------
-def generate_layered_wavy_poster(width=8, height=10, n_blobs=10, style='minimal', seed=None):
+def generate_poster(style="Pastel", seed=None):
     if seed is not None:
         random.seed(seed)
         np.random.seed(seed)
 
-    fig, ax = plt.subplots(figsize=(width, height))
-    ax.set_xlim(0, width)
-    ax.set_ylim(0, height)
+    fig, ax = plt.subplots(figsize=(6, 8))
     ax.axis('off')
 
-    for _ in range(n_blobs):
-        x, y = random.uniform(0, width), random.uniform(0, height)
-        radius = random.uniform(0.5, 2)
-        color = random_pastel_color(style)
-        max_offset = random.uniform(0.03, 0.12)
-        draw_irregular_wavy_circle(ax, x, y, radius, num_points=120, max_offset=max_offset, color=color)
+    if style.lower() == "minimal":
+        n_layers, wobble_factor, min_size, max_size, palette_type = 4, 0.05, 0.07, 0.15, "muted"
+    elif style.lower() == "vivid":
+        n_layers, wobble_factor, min_size, max_size, palette_type = 15, 0.2, 0.05, 0.25, "vivid"
+    elif style.lower() == "noisetouch":
+        n_layers, wobble_factor, min_size, max_size, palette_type = 12, 0.4, 0.04, 0.2, "pastel"
+    else:
+        n_layers, wobble_factor, min_size, max_size, palette_type = 8, 0.2, 0.05, 0.2, "pastel"
 
-    ax.text(0.2, height - 0.5, "Generative Poster", fontsize=16, fontweight='bold', ha='left', va='top')
-    ax.text(0.2, height - 1.0, "Week 2 Arts & Advanced Big Data", fontsize=12, ha='left', va='top')
-    ax.set_aspect('equal')
+    colors = random_palette(5, palette_type)
+
+    for _ in range(n_layers):
+        center_x, center_y = random.uniform(0, 1), random.uniform(0, 1)
+        size = random.uniform(min_size, max_size)
+        x, y = blob((center_x, center_y), size, wobble_factor)
+        ax.fill(x, y, color=random.choice(colors), alpha=0.6)
+
+    ax.text(0.02, 0.95, "Generative Poster\nWeek 2 Arts & Advanced Big Data",
+            fontsize=12, fontweight='bold', color='black', transform=ax.transAxes,
+            verticalalignment='top', horizontalalignment='left')
 
     return fig
-
 
 # ---------------------------
 # Streamlit UI
 # ---------------------------
-st.title("🎨 Generative Poster Creator")
-st.write("파스텔 톤의 물결형 원을 겹겹이 쌓아 만드는 생성형 포스터")
+st.title("🎨 Generative Poster Generator")
+st.write("랜덤한 색과 블롭 형태를 이용해 생성형 포스터를 만들어 보세요!")
 
-style = st.selectbox("🎨 Color Style 선택", ["minimal", "vivid", "noisetouch"])
-n_blobs = st.slider("원 개수", 5, 30, 10)
-seed = st.number_input("Seed (재현 가능성)", min_value=0, value=42)
+style = st.selectbox("🎨 Style 선택", ["Minimal", "Vivid", "Noisetouch", "Pastel"])
+seed = st.number_input("Seed (재현용)", min_value=0, value=42)
 
 if st.button("포스터 생성하기 🎨"):
-    fig = generate_layered_wavy_poster(width=8, height=10, n_blobs=n_blobs, style=style, seed=seed)
+    fig = generate_poster(style=style, seed=seed)
     st.pyplot(fig)
